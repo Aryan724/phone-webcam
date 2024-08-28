@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -13,8 +14,14 @@
         const peerConnection = new RTCPeerConnection();
         const signalingServer = new WebSocket('ws://192.168.138.138:8080'); // Replace with your PC's IP address
 
+        signalingServer.onopen = () => {
+            console.log('WebSocket connection established.');
+        };
+
         signalingServer.onmessage = async (message) => {
             const data = JSON.parse(message.data);
+            console.log('Received message:', data);
+
             if (data.offer) {
                 await peerConnection.setRemoteDescription(new RTCSessionDescription(data.offer));
                 const answer = await peerConnection.createAnswer();
@@ -28,6 +35,7 @@
         };
 
         peerConnection.ontrack = (event) => {
+            console.log('Received remote stream.');
             remoteVideo.srcObject = event.streams[0];
         };
 
@@ -35,6 +43,10 @@
             if (event.candidate) {
                 signalingServer.send(JSON.stringify({ iceCandidate: event.candidate }));
             }
+        };
+
+        peerConnection.oniceconnectionstatechange = () => {
+            console.log('ICE connection state:', peerConnection.iceConnectionState);
         };
     </script>
 </body>
