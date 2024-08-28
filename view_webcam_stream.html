@@ -15,7 +15,7 @@
                 video.srcObject = stream;
 
                 // Create a WebSocket connection to your PC
-                const ws = new WebSocket('ws://192.168.86.138:8080');
+                const ws = new WebSocket('ws://192.168.138.138:8080');
                 ws.onopen = () => {
                     ws.send("Stream started");  // Optionally notify server
                 };
