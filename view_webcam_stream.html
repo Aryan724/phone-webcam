@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Phone Webcam</title>
+</head>
+<body>
+    <h1>Phone Webcam</h1>
+    <video id="video" width="100%" autoplay></video>
+    <script>
+        navigator.mediaDevices.getUserMedia({ video: true })
+            .then(stream => {
+                const video = document.getElementById('video');
+                video.srcObject = stream;
+
+                // Create a WebSocket connection to your PC
+                const ws = new WebSocket('ws://192.168.86.138:8080');
+                ws.onopen = () => {
+                    ws.send("Stream started");  // Optionally notify server
+                };
+
+                // You can send the stream here to your server
+                // However, this is complex and typically done using WebRTC
+            })
+            .catch(error => {
+                console.error("Error accessing camera:", error);
+            });
+    </script>
+</body>
+</html>
