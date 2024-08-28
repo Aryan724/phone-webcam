@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Phone Webcam</title>
+</head>
+<body>
+    <h1>Phone Webcam</h1>
+    <video id="localVideo" width="100%" autoplay></video>
+    <script>
+        const localVideo = document.getElementById('localVideo');
+        const peerConnection = new RTCPeerConnection();
+        const signalingServer = new WebSocket('ws://192.168.138.138:8080'); // Replace with your PC's IP address
+
+        // Capture video from webcam
+        navigator.mediaDevices.getUserMedia({ video: true })
+            .then(stream => {
+                localVideo.srcObject = stream;
+                stream.getTracks().forEach(track => peerConnection.addTrack(track, stream));
+            })
+            .catch(error => console.error('Error accessing webcam:', error));
+
+        signalingServer.onmessage = async (message) => {
+            const data = JSON.parse(message.data);
+            if (data.offer) {
+                await peerConnection.setRemoteDescription(new RTCSessionDescription(data.offer));
+                const answer = await peerConnection.createAnswer();
+                await peerConnection.setLocalDescription(answer);
+                signalingServer.send(JSON.stringify({ answer }));
+            } else if (data.answer) {
+                await peerConnection.setRemoteDescription(new RTCSessionDescription(data.answer));
+            } else if (data.iceCandidate) {
+                await peerConnection.addIceCandidate(new RTCIceCandidate(data.iceCandidate));
+            }
+        };
+
+        peerConnection.onicecandidate = (event) => {
+            if (event.candidate) {
+                signalingServer.send(JSON.stringify({ iceCandidate: event.candidate }));
+            }
+        };
+
+        // Notify signaling server of new connection
+        signalingServer.onopen = async () => {
+            const offer = await peerConnection.createOffer();
+            await peerConnection.setLocalDescription(offer);
+            signalingServer.send(JSON.stringify({ offer }));
+        };
+    </script>
+</body>
+</html>
+v
